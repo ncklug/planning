@@ -8,6 +8,14 @@ import Head from 'next/head'
 import { Settings, X } from 'react-feather'
 import createPersistedState from 'use-persisted-state'
 
+function isNumeric(str: string) {
+  if (typeof str != 'string') return false // we only process strings!
+  return (
+    !isNaN(str as any) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str))
+  ) // ...and ensure strings of whitespace fail
+}
+
 type ConfigItem = {
   name: string
   expectedHours: number
@@ -16,9 +24,7 @@ type ConfigItem = {
 
 type Config = Array<ConfigItem>
 
-const Button = styled.button({
-  // width: 48,
-})
+const Button = styled.button({})
 
 const Input = styled.input({
   fontSize: 14,
@@ -44,7 +50,6 @@ const useConfig = () => {
     ])
   }
   const deleteConfigItem: DeleteConfigItem = index => {
-    console.log(index)
     setConfig(prevConfig => [
       ...prevConfig.slice(0, index),
       ...prevConfig.slice(index + 1),
@@ -82,7 +87,7 @@ type ConfigurerProps = {
   addConfigItem: AddConfigItem
   deleteConfigItem: DeleteConfigItem
   setConfigItem: SetConfigItem
-  clearConfig: SetConfigItem
+  clearConfig: ClearConfig
   showGraph: () => void
 }
 const Configurer: React.FC<ConfigurerProps> = ({
@@ -112,12 +117,18 @@ const Configurer: React.FC<ConfigurerProps> = ({
           <Input
             css={HOURS_COL_STYLE}
             value={expectedHours}
-            onChange={e => setConfigItem(i, { expectedHours: e.target.value })}
+            onChange={e =>
+              isNumeric(e.target.value) &&
+              setConfigItem(i, { expectedHours: Number(e.target.value) })
+            }
           />
           <Input
             css={HOURS_COL_STYLE}
             value={currentHours}
-            onChange={e => setConfigItem(i, { currentHours: e.target.value })}
+            onChange={e =>
+              isNumeric(e.target.value) &&
+              setConfigItem(i, { currentHours: Number(e.target.value) })
+            }
           />
           <X
             css={{ marginLeft: 4, verticalAlign: 'middle' }}
@@ -165,7 +176,7 @@ const Graph: React.FC<GraphProps> = ({ config, showConfig }) => {
           }))}
           indexBy="name"
           layout="horizontal"
-          reverse="true"
+          reverse={true}
           keys={['remainingHours', 'currentHours']}
           margin={{ top: 20, right: 0, bottom: 50, left: 80 }}
           axisLeft={{
